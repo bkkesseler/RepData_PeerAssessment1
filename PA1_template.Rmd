@@ -1,25 +1,94 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: "Ben Kesseler"
+date: "May 10, 2016"
 output: 
-  html_document:
-    keep_md: true
+        html_document:
+                keep_md: true
 ---
 
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(knitr)
+```
 
 ## Loading and preprocessing the data
 
+The original file provided was *activity.zip*. This code assumes that file is
+in the working directory. The code will check for the presence of *activity.csv*,
+and if not found, unzip the file *activity.zip*.
 
+The code will then read in *activity.csv*.
+
+```{r unzip}
+if (length(list.files(pattern="activity.csv")) == 0) {
+        if (length(list.files(pattern="activity.zip")) == 0) {
+                paste("Please put the file activity.zip in the working directory")
+                } else {
+                        unzip("activity.zip")
+                        activity <- read.csv("activity.csv")
+                        paste("activity.zip found, unzipped, and read into item: activity")
+                }
+        } else {
+                activity <- read.csv("activity.csv")        
+                paste("activity.csv found, read into item: activity")
+                        
+}
+
+```
 
 ## What is mean total number of steps taken per day?
 
+First, the code will calculate the number of total steps per day, and store the 
+result in a new data frame.
 
+```{r totalsteps}
+activity.by.day <- aggregate(
+        list(steps = activity$steps),
+        by = list(date = activity$date),
+        FUN =sum)
+```
+
+For this portion of the analysis, NA values are ignored.
+
+```{r cleantotalsteps}
+activity.by.day.clean <- subset(activity.by.day,!is.na(steps))
+```
+
+Next, a histrogram will be created to show the distribution of the total steps
+per day.
+
+```{r cleanhistogram,fig.align='center'}
+ggplot(activity.by.day.clean,aes(steps))+
+        geom_histogram(
+                breaks=seq(min(activity.by.day.clean$steps,na.rm=T),
+                           max(activity.by.day.clean$steps,na.rm=T),l=17),
+                col="black",
+                fill="light blue")+
+        theme_bw()+
+        stat_bin(
+                breaks=seq(min(activity.by.day.clean$steps,na.rm=T),
+                           max(activity.by.day.clean$steps,na.rm=T),l=17),
+                geom="text", 
+                aes(label=..count..), 
+                vjust=-1.5)+
+        expand_limits(y=c(0,13))+
+        ggtitle("Distribution of Days with Various Total Daily Step Amounts")+
+        labs(x="Total Daily Steps",y="Count of Days")
+```
+
+The mean and median of the total number of steps taken per day are:
+
+```{r meanclean}
+table.mean.and.median <- data.frame(Measurements = c("Mean","Median"),
+                                    Values = c(
+                                            mean(activity.by.day.clean$steps),
+                                            median(activity.by.day.clean$steps)
+                                    )
+)
+kable(table.mean.and.median)
+```
 
 ## What is the average daily activity pattern?
 
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
