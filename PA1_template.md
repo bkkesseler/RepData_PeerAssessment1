@@ -473,3 +473,5 @@ ggplot(activity.by.interval.2,aes(x=time,y=revised_steps))+
 ```
 
 <img src="PA1_template_files/figure-html/averagesteps2-1.png" style="display: block; margin: auto;" />
+
+So it seems there is a difference in activity pattern by type of day.

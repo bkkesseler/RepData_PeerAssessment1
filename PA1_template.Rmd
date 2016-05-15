@@ -67,7 +67,7 @@ activity.by.day.clean <- subset(activity.by.day,!is.na(steps))
 Next, a histrogram will be created to show the distribution of the total steps
 per day.
 
-```{r cleanhistogram,fig.align="center"}
+```{r cleanhistogram,fig.align="center",fig.width=10}
 original.histogram <- ggplot(activity.by.day.clean,aes(steps))+
         geom_histogram(
                 breaks=seq(min(activity.by.day.clean$steps,na.rm=TRUE),
@@ -300,3 +300,5 @@ ggplot(activity.by.interval.2,aes(x=time,y=revised_steps))+
         ggtitle("Average Steps throughout the Day, over all days")+
         facet_wrap(~daytype,nrow=2)
 ```
+
+So it seems there is a difference in activity pattern by type of day.
