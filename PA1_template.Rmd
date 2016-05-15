@@ -10,12 +10,16 @@ First, some libraries need to be called, and some settings set.
 
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
-library(ggplot2)
-library(knitr)
-library(readr)
-library(scales)
+libraries <- c("ggplot2",
+               "knitr",
+               "readr",
+               "scales",
+               "lubridate",
+               "reshape",
+               "gridExtra")
+sapply(libraries,library,character.only=TRUE)
 ```
-
+***
 ## Loading and preprocessing the data
 
 The original file provided was *activity.zip*. This code assumes that file is
@@ -40,9 +44,8 @@ if (length(list.files(pattern="activity.csv")) == 0) {
 }
 
 activity$time <- strptime(sprintf("%04d",activity$interval),format="%H%M")
-
 ```
-
+***
 ## What is the mean total number of steps taken per day?
 
 First, the code will calculate the number of total steps per day, and store the 
@@ -65,7 +68,7 @@ Next, a histrogram will be created to show the distribution of the total steps
 per day.
 
 ```{r cleanhistogram,fig.align="center"}
-ggplot(activity.by.day.clean,aes(steps))+
+original.histogram <- ggplot(activity.by.day.clean,aes(steps))+
         geom_histogram(
                 breaks=seq(min(activity.by.day.clean$steps,na.rm=TRUE),
                            max(activity.by.day.clean$steps,na.rm=TRUE),l=17),
@@ -83,6 +86,8 @@ ggplot(activity.by.day.clean,aes(steps))+
         expand_limits(y=c(0,13))+
         ggtitle("Distribution of Days with Various Total Daily Step Amounts")+
         labs(x="Total Daily Steps",y="Count of Days")
+
+original.histogram
 ```
 
 The mean and median of the total number of steps taken per day are:
@@ -96,7 +101,7 @@ table.mean.and.median <- data.frame(Measurements = c("Mean","Median"),
 )
 kable(table.mean.and.median)
 ```
-
+***
 ## What is the average daily activity pattern?
 
 The data must first be aggregated by interval, time must be added for
@@ -134,7 +139,6 @@ ggplot(activity.by.interval,aes(x=time,y=steps))+
                                format(maximum.average.steps.time,"%-H:%M")),
                  hjust=0
         )
-
 ```
 
 The 5-minute interval from 8:35AM - 8:40AM has the highest average number of 
@@ -145,5 +149,154 @@ format(max(activity.by.interval$steps),digits=4)
 
 format(maximum.average.steps.time,"%-H:%M")
 ```
-
+***
 ## Imputing missing values
+
+Missing values may be a problem. How many missing values are there, and how are
+they distributed by time, day, and day of week?
+
+```{r missingcheck}
+activity$day <- factor(weekdays(activity$date),c("Monday",
+                                                 "Tuesday",
+                                                 "Wednesday",
+                                                 "Thursday",
+                                                 "Friday",
+                                                 "Saturday",
+                                                 "Sunday"))
+
+activity$daytype <- factor(activity$day %in% c("Monday",
+                                               "Tuesday",
+                                               "Wednesday",
+                                               "Thursday",
+                                               "Friday"),
+                           levels=c(TRUE,FALSE),
+                           labels=c('Weekday', 'Weekend'))
+
+activity$hour <- hour(activity$time)
+
+activity$missing <- is.na(activity$steps)
+
+with(activity,xtabs(missing ~ daytype + hour))
+```
+
+So there are missing values for every hour and every day type.
+
+How many missing value are there, overall?
+
+```{r totalmissing}
+print(paste("Total missing values:",sum(activity$missing)))
+
+print(paste("% of values missing:",
+            percent(sum(activity$missing)/length(activity$steps))))
+```
+
+So we need to impute the missing values. I'm going to use the average value for
+the type of day (weekday or weekend) and the hour in question. How many values
+will I be using to impute the missing values?
+
+```{r nonmissingtable}
+with(activity,xtabs(!missing ~ daytype + hour))
+```
+
+That's reasonable, in terms of how many non-missing values I'll be using to
+impute the missing values.
+
+```{r imputation}
+activity.nomissing <- subset(activity,!is.na(steps))
+activity.bydaytype.byhour <- cast(
+        activity.nomissing[,c("daytype","hour","steps")],
+        daytype ~ hour,value="steps",mean)
+activity.bydaytype.byhour <- melt(activity.bydaytype.byhour,id.vars=c("daytype"))
+activity.preimpute <- merge(activity,activity.bydaytype.byhour)
+activity.postimpute <- activity.preimpute
+
+for (i in 1:nrow(activity.postimpute)) {
+        if (activity.postimpute$missing[i] == TRUE) {
+                activity.postimpute$revised_steps[i] <- activity.postimpute$value[i]
+        } else {
+                activity.postimpute$revised_steps[i] <- activity.postimpute$steps[i]
+                }
+}
+
+activity.postimpute <- activity.postimpute[,c("date","time","interval","daytype","hour","revised_steps")]
+```
+
+Now we need to create a histogram of the new data.
+
+First, the code will calculate the number of total steps per day, and store the 
+result in a new data frame.
+
+```{r totalsteps_imputed}
+activity.by.day.fixed <- aggregate(
+        list(revised_steps = activity.postimpute$revised_steps),
+        by = list(date = activity.postimpute$date),
+        FUN =sum)
+```
+
+And for the histogram
+
+```{r imputedhistogram,fig.align="center",fig.width=10}
+imputed.histogram <- ggplot(activity.by.day.fixed,aes(revised_steps))+
+        geom_histogram(
+                breaks=seq(min(activity.by.day.fixed$revised_steps,na.rm=TRUE),
+                           max(activity.by.day.fixed$revised_steps,na.rm=TRUE),l=17),
+                col="black",
+                aes(fill=..count..)
+                )+
+        scale_fill_continuous("Count",low="green", high="dark green")+
+        theme_bw()+
+        stat_bin(
+                breaks=seq(min(activity.by.day.fixed$revised_steps,na.rm=TRUE),
+                           max(activity.by.day.fixed$revised_steps,na.rm=TRUE),l=17),
+                geom="text", 
+                aes(label=..count..), 
+                vjust=-1)+
+        expand_limits(y=c(0,19))+
+        ggtitle("Distribution of Days with Various Total Daily Step Amounts")+
+        labs(x="Total Daily Steps",y="Count of Days")
+
+grid.arrange(original.histogram, imputed.histogram, ncol=1)
+```
+
+The mean and median of the total number of steps taken per day are:
+
+```{r meanclean2}
+table.mean.and.median.2 <- data.frame(Measurements = c("Original Mean",
+                                                       "Imputed Mean",
+                                                       "Original Median",
+                                                       "Imputed Median"),
+                                    Values = c(
+                                            mean(activity.by.day.clean$steps),
+                                            mean(activity.by.day.fixed$revised_steps),
+                                            median(activity.by.day.clean$steps),
+                                            median(activity.by.day.fixed$revised_steps)
+                                    )
+)
+kable(table.mean.and.median.2)
+```
+
+So the mean and median didn't shift a lot, which is encouraging.
+
+***
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+```{r intervalaggregation2}
+activity.by.interval.2 <- aggregate(revised_steps ~ interval + daytype,data=activity.postimpute[,c("daytype","interval","revised_steps")],
+                                  FUN=mean,
+                                  na.rm=TRUE)
+
+activity.by.interval.2$time <- activity$time[1:288]
+```
+
+Now the code will plot the time series of average daily steps.
+
+```{r averagesteps2,fig.align="center",fig.width=10}
+ggplot(activity.by.interval.2,aes(x=time,y=revised_steps))+
+        geom_line(color="blue")+
+        theme_bw()+
+        labs(x="Time Interval",y="Average Steps")+
+        scale_x_datetime(labels=date_format("%H:%M",tz="America/Los_Angeles"))+
+        ggtitle("Average Steps throughout the Day, over all days")+
+        facet_wrap(~daytype,nrow=2)
+```
