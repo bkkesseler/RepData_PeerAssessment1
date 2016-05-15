@@ -190,7 +190,9 @@ The mean and median of the total number of steps taken per day are:
 
 
 ```r
-table.mean.and.median <- data.frame(Measurements = c("Mean","Median"),
+table.mean.and.median <- data.frame(Measurements = c(
+        "Mean of total number of steps each day",
+        "Median of total number of steps each day"),
                                     Values = c(
                                             mean(activity.by.day.clean$steps),
                                             median(activity.by.day.clean$steps)
@@ -201,10 +203,10 @@ kable(table.mean.and.median,format="markdown")
 
 
 
-|Measurements |   Values|
-|:------------|--------:|
-|Mean         | 10766.19|
-|Median       | 10765.00|
+|Measurements                             |   Values|
+|:----------------------------------------|--------:|
+|Mean of total number of steps each day   | 10766.19|
+|Median of total number of steps each day | 10765.00|
 
 ***
 
@@ -423,10 +425,11 @@ The mean and median of the total number of steps taken per day are:
 
 
 ```r
-table.mean.and.median.2 <- data.frame(Measurements = c("Original Mean",
-                                                       "Imputed Mean",
-                                                       "Original Median",
-                                                       "Imputed Median"),
+table.mean.and.median.2 <- data.frame(Measurements = c(
+        "Original Mean of total number of steps each day",
+        "Revised Mean of total number of steps each day, with imputed data",
+        "Original Median of total number of steps each day",
+        "Revised Median of total number of steps each day, with imputed data"),
                                     Values = c(
                                             mean(activity.by.day.clean$steps),
                                             mean(activity.by.day.fixed$revised_steps),
@@ -439,12 +442,12 @@ kable(table.mean.and.median.2,format="markdown")
 
 
 
-|Measurements    |   Values|
-|:---------------|--------:|
-|Original Mean   | 10766.19|
-|Imputed Mean    | 10762.05|
-|Original Median | 10765.00|
-|Imputed Median  | 10571.00|
+|Measurements                                                        |   Values|
+|:-------------------------------------------------------------------|--------:|
+|Original Mean of total number of steps each day                     | 10766.19|
+|Revised Mean of total number of steps each day, with imputed data   | 10762.05|
+|Original Median of total number of steps each day                   | 10765.00|
+|Revised Median of total number of steps each day, with imputed data | 10571.00|
 
 So the mean and median didn't shift a lot, which is encouraging.
 
