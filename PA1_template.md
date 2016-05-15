@@ -196,16 +196,18 @@ table.mean.and.median <- data.frame(Measurements = c("Mean","Median"),
                                             median(activity.by.day.clean$steps)
                                     )
 )
-kable(table.mean.and.median)
+kable(table.mean.and.median,format="markdown")
 ```
 
 
 
-Measurements      Values
--------------  ---------
-Mean            10766.19
-Median          10765.00
+|Measurements |   Values|
+|:------------|--------:|
+|Mean         | 10766.19|
+|Median       | 10765.00|
+
 ***
+
 ## What is the average daily activity pattern?
 
 The data must first be aggregated by interval, time must be added for
@@ -409,7 +411,7 @@ imputed.histogram <- ggplot(activity.by.day.fixed,aes(revised_steps))+
                 aes(label=..count..), 
                 vjust=-1)+
         expand_limits(y=c(0,19))+
-        ggtitle("Distribution of Days with Various Total Daily Step Amounts")+
+        ggtitle("Distribution of Days with Various Total Daily Step Amounts, with Imputed Data")+
         labs(x="Total Daily Steps",y="Count of Days")
 
 grid.arrange(original.histogram, imputed.histogram, ncol=1)
@@ -432,17 +434,17 @@ table.mean.and.median.2 <- data.frame(Measurements = c("Original Mean",
                                             median(activity.by.day.fixed$revised_steps)
                                     )
 )
-kable(table.mean.and.median.2)
+kable(table.mean.and.median.2,format="markdown")
 ```
 
 
 
-Measurements         Values
-----------------  ---------
-Original Mean      10766.19
-Imputed Mean       10762.05
-Original Median    10765.00
-Imputed Median     10571.00
+|Measurements    |   Values|
+|:---------------|--------:|
+|Original Mean   | 10766.19|
+|Imputed Mean    | 10762.05|
+|Original Median | 10765.00|
+|Imputed Median  | 10571.00|
 
 So the mean and median didn't shift a lot, which is encouraging.
 
@@ -468,7 +470,7 @@ ggplot(activity.by.interval.2,aes(x=time,y=revised_steps))+
         theme_bw()+
         labs(x="Time Interval",y="Average Steps")+
         scale_x_datetime(labels=date_format("%H:%M",tz="America/Los_Angeles"))+
-        ggtitle("Average Steps throughout the Day, over all days")+
+        ggtitle("Average Steps throughout the Day, over all days, with Imputed Data")+
         facet_wrap(~daytype,nrow=2)
 ```
 
